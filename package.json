@@ -1,0 +1,21 @@
+{
+  "name": "mysterymiles-monorepo",
+  "version": "1.0.0",
+  "description": "MysteryMiles - Personalized Travel Discovery Web Application",
+  "private": true,
+  "scripts": {
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "backend:start": "cd backend && npm start",
+    "frontend:build": "cd frontend && npm run build"
+  },
+  "keywords": [
+    "travel",
+    "discovery",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}
