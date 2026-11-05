@@ -2,6 +2,7 @@ import Destination from '../models/Destination.model.js';
 import DiscoveryHistory from '../models/DiscoveryHistory.model.js';
 import Review from '../models/Review.model.js';
 import { apiSuccess, apiError } from '../utils/apiResponse.js';
+import { seedDestinations } from '../scripts/seedDestinations.js';
 
 export const formatDestination = (dest) => {
   if (!dest) return dest;
@@ -337,6 +338,21 @@ export const discoverDestinations = async (req, res, next) => {
         },
         totalMatches: topMatches.length
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Seed initial Indian travel destinations
+ */
+export const seedDestinationsHandler = async (req, res, next) => {
+  try {
+    const result = await seedDestinations({ shouldDisconnect: false });
+    return apiSuccess(res, {
+      message: `Destinations seeded successfully! Total destinations in database: ${result.total}`,
+      data: result
     });
   } catch (error) {
     next(error);

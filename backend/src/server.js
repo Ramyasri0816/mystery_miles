@@ -2,6 +2,8 @@ import app from './app.js';
 import env from './config/env.js';
 import connectDB from './config/db.js';
 import logger from './utils/logger.js';
+import Destination from './models/Destination.model.js';
+import { seedDestinations } from './scripts/seedDestinations.js';
 
 const startServer = () => {
   try {
@@ -11,9 +13,25 @@ const startServer = () => {
       logger.info(`Environment: ${env.NODE_ENV}`);
 
       // Connect to MongoDB asynchronously after HTTP listener binds
-      connectDB().catch((err) => {
-        logger.error('Initial database connection failure:', err.message);
-      });
+      connectDB()
+        .then(async (conn) => {
+          if (conn && conn.readyState === 1) {
+            try {
+              const count = await Destination.countDocuments();
+              if (count === 0) {
+                logger.info('Destination collection is empty. Auto-seeding initial Indian destinations...');
+                await seedDestinations({ shouldDisconnect: false });
+              } else {
+                logger.info(`Database contains ${count} destinations.`);
+              }
+            } catch (seedErr) {
+              logger.error('Auto-seed check failed:', seedErr.message);
+            }
+          }
+        })
+        .catch((err) => {
+          logger.error('Initial database connection failure:', err.message);
+        });
     });
 
     const shutdown = () => {

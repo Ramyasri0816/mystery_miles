@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import env from '../config/env.js';
+import { normalizeMongoUri } from '../config/db.js';
 import Destination from '../models/Destination.model.js';
 import logger from '../utils/logger.js';
 
@@ -600,11 +601,20 @@ export const INDIAN_DESTINATIONS = [
   }
 ];
 
-export const seedDestinations = async () => {
+export const seedDestinations = async ({ shouldDisconnect = false } = {}) => {
+  const isAlreadyConnected = mongoose.connection.readyState === 1;
+
   try {
-    logger.info(`Connecting to MongoDB at ${env.MONGODB_URI}...`);
-    await mongoose.connect(env.MONGODB_URI);
-    logger.info('Connected to MongoDB. Starting destination seed...');
+    if (!isAlreadyConnected) {
+      const uri = normalizeMongoUri(env.MONGODB_URI);
+      logger.info('Connecting to MongoDB for destination seeding...');
+      await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 10000,
+        retryWrites: true
+      });
+      logger.info('Connected to MongoDB. Starting destination seed...');
+    }
 
     let insertedCount = 0;
     let updatedCount = 0;
@@ -628,16 +638,22 @@ export const seedDestinations = async () => {
     logger.info(`Destination seeding complete!`);
     logger.info(`Inserted: ${insertedCount}, Updated: ${updatedCount}, Total in Database: ${total}`);
 
-    await mongoose.disconnect();
-    logger.info('Disconnected from database.');
-    return total;
+    if (shouldDisconnect && !isAlreadyConnected) {
+      await mongoose.disconnect();
+      logger.info('Disconnected from database.');
+    }
+
+    return { insertedCount, updatedCount, total };
   } catch (error) {
     logger.error('Failed to seed destinations:', error.message);
-    process.exit(1);
+    if (!isAlreadyConnected && shouldDisconnect) {
+      process.exit(1);
+    }
+    throw error;
   }
 };
 
 // Execute if run directly from CLI
 if (process.argv[1]?.endsWith('seedDestinations.js')) {
-  seedDestinations();
+  seedDestinations({ shouldDisconnect: true });
 }

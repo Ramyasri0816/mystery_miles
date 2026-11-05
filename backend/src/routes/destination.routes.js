@@ -2,7 +2,8 @@ import express from 'express';
 import {
   getDestinations,
   getDestinationById,
-  discoverDestinations
+  discoverDestinations,
+  seedDestinationsHandler
 } from '../controllers/destination.controller.js';
 import {
   createReview,
@@ -27,6 +28,10 @@ router.get('/discover', optionalAuth, validate(discoveryQuerySchema, 'query'), d
 
 // GET /api/destinations - Full search, filter, pagination, sorting
 router.get('/', validate(destinationQuerySchema, 'query'), getDestinations);
+
+// Seed endpoint (supports GET & POST for convenient population)
+router.get('/seed', seedDestinationsHandler);
+router.post('/seed', seedDestinationsHandler);
 
 // GET /api/destinations/:id - Details of single destination
 router.get('/:id', validate(destinationIdParamSchema, 'params'), getDestinationById);
